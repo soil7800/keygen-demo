@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}
+{{ block.super }} - home
+{% endblock %}
+{% block content %}
+<div class="keygen">
+    <div class="box_header">
+        <div class="user_info-wrapper">
+            <div class="user_info">
+                <span class="user_info-field_label">username:</span> 
+                <p class="user_info-field">{{ user.username }}</p>
+                <span class="user_info-field_label">github id:</span>
+                <p class="user_info-field">{{ user.profile.github_id }}</p>
+            </div>
+            <div>
+                <img class="user_image" src="{{ user.profile.avatar_url }}" alt="user {{ user.username }} photo">
+            </div>
+        </div>
+    </div>
+    <div class="box_content"> 
+        <div class="generated_key">
+            <div class="generated_key-label">your code</div>
+            <div id="generated-key">
+                {{ key.key }}  
+            </div>
+            <div class="progressBar-wrapper">
+                <div id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+    <div class="box_footer">
+        <a class="btn" href="{% url 'logout' %}">logout</a>
+    </div>
+</div>
+
+<script>
+    var updated = parseInt("{{ update_timestamp }}");
+    animateProgress();
+    const keySocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/keygen/'
+    );
+    keySocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+    keySocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        document.querySelector('#generated-key').innerHTML = data.key;
+        updated = data.last_updated;
+        animateProgress();
+    };
+    function animateProgress() {
+        var currentOffset = 1-(100-(Date.now() - updated)/50)/100;
+        var offsetDict;
+        var backgroundDict;
+        var tmp;
+        if (currentOffset < 0.6) {
+            tmp = 1 - 0.4/(1 - currentOffset);
+            offsetDict = [0, tmp, tmp, 1];
+            backgroundDict = ['#007ffd', '#007ffd', '#da2f47', '#da2f47'];
+        } else {
+            offsetDict = [0, 1];
+            backgroundDict = ['#da2f47', '#da2f47'];
+        };
+        document.querySelector("#progressBar").animate({
+            background: backgroundDict,
+            offset: offsetDict,
+            width: [(100-(Date.now() - updated)/50).toString()+'%', '0%'],
+        }, (5000-(Date.now() - updated))
+        );
+    }
+</script>
+{% endblock %}

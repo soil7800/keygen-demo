@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/keygen/static
+      - media_volume:/keygen/media
+    depends_on:
+      - web
+  web:
+    build:
+      context: ./keygen
+      dockerfile: Dockerfile
+    entrypoint: ./entrypoint.prod.sh
+    volumes:
+      - static_volume:/keygen/static
+      - media_volume:/keygen/media
+    env_file:
+      - ./.env
+    expose:
+      - 8000
+    depends_on:
+      - redis
+      - db
+  redis:
+    image: redis:5
+    ports:
+     - "6379:6379"
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env.db
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
